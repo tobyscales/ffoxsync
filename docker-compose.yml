@@ -1,6 +1,5 @@
   traefik:
-    image: traefik:1.7-alpine
-    container_name: traefik
+    image: traefik
     command:
       - --logLevel=DEBUG
       - --defaultentrypoints=http,https
@@ -18,12 +17,8 @@
       - --acme.httpchallenge=true
       - --acme.httpchallenge.entrypoint=http
     ports:
-      - target: 80
-        published: 80
-        protocol: tcp
-      - target: 443
-        published: 443
-        protocol: tcp
+      - "80:80"
+      - "8080:8080"
     volumes:
       - ${WEBAPP_STORAGE_HOME}/acme.json:/acme.json
     restart: always
