@@ -9,16 +9,16 @@ services:
       - "443:443"
       - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik.toml:/etc/traefik/traefik.toml
-      - ./acme.json:/acme.json
+      - ${WEBAPP_STORAGE_HOME}/foxsync/docker.sock:/var/run/docker.sock
+      - ${WEBAPP_STORAGE_HOME}/foxsync/traefik.toml:/etc/traefik/traefik.toml
+      - ${WEBAPP_STORAGE_HOME}/foxsync/acme.json:/acme.json
       
   firefox-syncserver:
     image: mozilla/syncserver:latest
     restart: unless-stopped
     volumes:
       - firefox-syncserver-data:/tmp
-      - ${WEBAPP_STORAGE_HOME}/etc/localtime:/etc/localtime:ro
+      - ${WEBAPP_STORAGE_HOME}/foxsync/localtime:/etc/localtime:ro
     environment:
       - TZ=US/Pacific
       - SYNCSERVER_PUBLIC_URL=https://ffoxsync.tobyscales.com
