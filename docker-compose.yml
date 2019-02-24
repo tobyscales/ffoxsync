@@ -1,7 +1,9 @@
-version: '3'
+version: "3.2"
+
 services:
   traefik:
-    image: traefik:latest
+    image: traefik:1.7-alpine
+    container_name: traefik
     command:
       - "--logLevel=INFO"
       - "--defaultentrypoints=http,https"
@@ -12,7 +14,7 @@ services:
       - "--docker.domain=scales.fun"
       - "--acme=true"
       - "--acme.acmelogging=true"
-      - "--acme.email=encrypt@scales.fun"
+      - "--acme.email=webmaster@scales.fun"
       - "--acme.storage=acme.json"
       - "--acme.entryPoint=https"
       - "--acme.onhostrule=true"
@@ -26,27 +28,26 @@ services:
         published: 443
         protocol: tcp
     volumes:
-      - "${WEBAPP_STORAGE_HOME}/acme.json:/acme.json"
-      
+      - "./acme.json:/acme.json"
+    restart: always
+
   firefox-syncserver:
-    image: mozilla/syncserver:latest
-    restart: unless-stopped
+    image: crazymax/firefox-syncserver:latest
+    container_name: firefox_syncserver
     volumes:
-      - firefox-syncserver-data:/tmp
-    environment:
-      - TZ=US/Pacific
-      - SYNCSERVER_PUBLIC_URL=https://ffoxsync.scales.fun
-      - SYNCSERVER_SECRET=SomeGreatSecret!
-      - SYNCSERVER_SQLURI=sqlite:////tmp/syncserver.db
-      - SYNCSERVER_BATCH_UPLOAD_ENABLED=true
-      - SYNCSERVER_FORCE_WSGI_ENVIRON=true
-      - SYNCSERVER_ALLOW_NEW_USER=true
-      - PORT=5000
+      - "firefox-syncserver:/data"
     labels:
-      - traefik.enable=true
+      - "traefik.enable=true"
       - "traefik.backend=firefox-syncserver"
       - "traefik.port=5000"
-      - "traefik.frontend.rule=Host:ffoxsync.scales.fun"
+      - "traefik.frontend.rule=Host:firefox-syncserver.scales.fun"
+    environment:
+      - "TZ=Europe/Paris"
+      - "FF_SYNCSERVER_PUBLIC_URL=https://firefox-syncserver.scales.fun"
+      - "FF_SYNCSERVER_SECRET=5up3rS3kr1t"
+      - "FF_SYNCSERVER_ALLOW_NEW_USERS=true"
+      - "FF_SYNCSERVER_FORCE_WSGI_ENVIRON=false"
+    restart: always
 
 volumes:
-  firefox-syncserver-data:
+  firefox-syncserver:
