@@ -28,7 +28,7 @@ services:
         published: 443
         protocol: tcp
     volumes:
-      - "./acme.json:/acme.json"
+      - "${WEBAPP_STORAGE_HOME}/acme.json:/acme.json"
     restart: always
 
   firefox-syncserver:
