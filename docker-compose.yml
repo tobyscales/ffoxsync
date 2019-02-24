@@ -3,35 +3,51 @@ services:
   traefik:
     image: traefik:latest
     restart: unless-stopped
-    command: --docker --logLevel="INFO"
+     command:
+      - "--logLevel=INFO"
+      - "--defaultentrypoints=http,https"
+      - "--entryPoints=Name:http Address::80 Redirect.EntryPoint:https"
+      - "--entryPoints=Name:https Address::443 TLS"
+      - "--docker"
+      - "--docker.exposedbydefault=false"
+      - "--docker.domain=scales.fun"
+      - "--acme=true"
+      - "--acme.acmelogging=true"
+      - "--acme.email=encrypt@scales.fun"
+      - "--acme.storage=acme.json"
+      - "--acme.entryPoint=https"
+      - "--acme.onhostrule=true"
+      - "--acme.httpchallenge=true"
+      - "--acme.httpchallenge.entrypoint=http"
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
+      - target: 80
+        published: 80
+        protocol: tcp
+      - target: 443
+        published: 443
+        protocol: tcp
     volumes:
-      - ${WEBAPP_STORAGE_HOME}/ffoxsync/docker.sock:/var/run/docker.sock
-      - ${WEBAPP_STORAGE_HOME}/ffoxsync/traefik:/etc/traefik
-      - ${WEBAPP_STORAGE_HOME}/ffoxsync/acme.json:/acme.json
+      - "${WEBAPP_STORAGE_HOME}/acme.json:/acme.json"
       
   firefox-syncserver:
     image: mozilla/syncserver:latest
     restart: unless-stopped
     volumes:
       - firefox-syncserver-data:/tmp
-      - ${WEBAPP_STORAGE_HOME}/ffoxsync/localtime:/etc/localtime:ro
     environment:
       - TZ=US/Pacific
-      - SYNCSERVER_PUBLIC_URL=https://ffoxsync.tobyscales.com
+      - SYNCSERVER_PUBLIC_URL=https://ffoxsync.scales.fun
       - SYNCSERVER_SECRET=SomeGreatSecret!
       - SYNCSERVER_SQLURI=sqlite:////tmp/syncserver.db
       - SYNCSERVER_BATCH_UPLOAD_ENABLED=true
       - SYNCSERVER_FORCE_WSGI_ENVIRON=true
       - SYNCSERVER_ALLOW_NEW_USER=true
-      - PORT=4500
+      - PORT=5000
     labels:
-      - traefik.enable=false
-      - traefik.frontend.rule=Host:ffoxsync.tobyscales.com
-      - traefik.port=4500
+      - traefik.enable=true
+      - "traefik.backend=firefox-syncserver"
+      - "traefik.port=5000"
+      - "traefik.frontend.rule=Host:ffoxsync.scales.fun"
 
 volumes:
   firefox-syncserver-data:
