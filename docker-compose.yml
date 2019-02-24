@@ -10,8 +10,8 @@ services:
       - "8080:8080"
     volumes:
       - ${WEBAPP_STORAGE_HOME}/ffoxsync/docker.sock:/var/run/docker.sock
-      - ./ffoxsync/traefik.toml:/etc/traefik/traefik.toml
-      - ./ffoxsync/acme.json:/acme.json
+      - ${WEBAPP_STORAGE_HOME}/ffoxsync/traefik:/etc/traefik
+      - ${WEBAPP_STORAGE_HOME}/ffoxsync/acme.json:/acme.json
       
   firefox-syncserver:
     image: mozilla/syncserver:latest
