@@ -8,7 +8,7 @@ services:
       - "firefox-syncserver:/data"
     environment:
       - "TZ=Europe/Paris"
-      - "FF_SYNCSERVER_PUBLIC_URL=https://firefox-syncserver.scales.fun"
+      - "FF_SYNCSERVER_PUBLIC_URL=https://foxsync.azurewebsites.net"
       - "FF_SYNCSERVER_SECRET=5up3rS3kr1t"
       - "FF_SYNCSERVER_ALLOW_NEW_USERS=true"
       - "FF_SYNCSERVER_FORCE_WSGI_ENVIRON=false"
