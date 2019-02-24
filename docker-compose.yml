@@ -1,5 +1,18 @@
 version: '3'
 services:
+  traefik:
+    image: traefik:latest
+    restart: unless-stopped
+    command: --docker --logLevel="INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.toml:/etc/traefik/traefik.toml
+      - ./acme.json:/acme.json
+      
   firefox-syncserver:
     image: mozilla/syncserver:latest
     restart: unless-stopped
