@@ -2,8 +2,7 @@ version: '3'
 services:
   traefik:
     image: traefik:latest
-    restart: unless-stopped
-     command:
+    command:
       - "--logLevel=INFO"
       - "--defaultentrypoints=http,https"
       - "--entryPoints=Name:http Address::80 Redirect.EntryPoint:https"
