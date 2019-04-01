@@ -55,7 +55,7 @@
                             "environmentVariables": [
                                 {
                                     "name": "SYNCSERVER_PUBLIC_URL",
-                                    "value": "concat([reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.dnsNameLabel], parameters('port'))"
+                                    "value": "[concat(reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.dnsNameLabel, parameters('port'))]"
                                 },
                                 {
                                     "name": "SYNCSERVER_SECRET",
@@ -109,7 +109,7 @@
     "outputs": {
         "syncServerConfig": {
             "type": "string",
-            "value": "concat([reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.dnsNameLabel], parameters('syncServerPort'))"
+            "value": "[concat(reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.dnsNameLabel, parameters('port'))]"
         }
     }
 }
