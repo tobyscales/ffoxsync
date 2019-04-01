@@ -55,11 +55,11 @@
                             "environmentVariables": [
                                 {
                                     "name": "SYNCSERVER_PUBLIC_URL",
-                                    "value": "[concat(reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.dnsNameLabel, parameters('port'))]"
+                                    "value": "[concat('http://', parameters('containerGroupName'), resourceGroup().location, 'azurecontainer.io:', parameters('port'))]"
                                 },
                                 {
                                     "name": "SYNCSERVER_SECRET",
-                                    "secretValue": "[parameters('dbpassword')]"
+                                    "securevalue": "[parameters('dbpassword')]"
                                 },
                                 {
                                     "name": "SYNCSERVER_SQLURI",
@@ -101,7 +101,8 @@
                             "protocol": "tcp",
                             "port": "[parameters('port')]"
                         }
-                    ]
+                    ],
+                    "dnsNameLabel": "[parameters('containerGroupName')]"
                 }
             }
         }
@@ -109,7 +110,7 @@
     "outputs": {
         "syncServerConfig": {
             "type": "string",
-            "value": "[concat(reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.dnsNameLabel, parameters('port'))]"
+            "value": "[concat('Configure Firefox using this URL - ', reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.dnsNameLabel, parameters('port'))]"
         }
     }
 }
