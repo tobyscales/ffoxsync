@@ -17,9 +17,9 @@
             }
         },
         "dbpassword": {
-            "type": "string",
+            "type": "securestring",
             "metadata": {
-                "description": "Default sync port."
+                "description": "Password for your sync service."
             }
         }
     },
@@ -59,7 +59,7 @@
                                 },
                                 {
                                     "name": "SYNCSERVER_SECRET",
-                                    "value": "[parameters('dbpassword')]"
+                                    "secretValue": "[parameters('dbpassword')]"
                                 },
                                 {
                                     "name": "SYNCSERVER_SQLURI",
