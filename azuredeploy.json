@@ -129,7 +129,7 @@
           {
             "name": "bootstrapper",
             "properties": {
-              "image": "matsuu/azure-cli-python",
+              "image": "mcr.microsoft.com/azure-cli",
               "command": [
                 "/bin/bash",
                 "-c",
@@ -187,16 +187,6 @@
                   "value": "[variables('storageShareName')]"
                 }
               ],
-              "ipAddress": {
-                "type": "Public",
-                "ports": [
-                  {
-                    "protocol": "tcp",
-                    "port": "[parameters('port')]"
-                  }
-                ],
-                "dnsNameLabel": "[variables('containerGroupName')]"
-              },
               "ports": [
                 {
                   "port": "[parameters('port')]"
@@ -235,7 +225,17 @@
               "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
             }
           }
-        ]
+        ],
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "tcp",
+              "port": "[parameters('port')]"
+            }
+          ],
+          "dnsNameLabel": "ffoxsync123"
+        }
       }
     },
     {
@@ -356,17 +356,7 @@
               "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
             }
           }
-        ],
-        "ipAddress": {
-          "type": "Public",
-          "ports": [
-            {
-              "protocol": "tcp",
-              "port": "[parameters('port')]"
-            }
-          ],
-          "dnsNameLabel": "[variables('containerGroupName')]"
-        }
+        ]
       }
     },
     {
