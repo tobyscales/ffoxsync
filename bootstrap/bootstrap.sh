@@ -3,14 +3,12 @@
 echo Location: $AZURE_LOCATION
 echo Resource Group: $AZURE_RESOURCE_GROUP
 
-dockerRepo=sunx/mozilla-syncserver
-
 az login --identity
 az configure --defaults location=$AZURE_LOCATION
 az configure --defaults group=$AZURE_RESOURCE_GROUP
 
-cp /code/$GITHUB_REPO/Dockerfile /$dockerRepo/Dockerfile -f
-cd /$dockerRepo
+cp /$BOOTSTRAP_REPO/Dockerfile /$GITHUB_REPO/Dockerfile -f
+cd /$GITHUB_REPO
 
 az acr create --name $AZURE_RESOURCE_GROUP --sku Standard --admin-enabled true
 
