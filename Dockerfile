@@ -1,7 +1,9 @@
 FROM python:2.7-alpine
 
-RUN addgroup -g 1001 app \
-    && adduser -u 1001 -S -D -G app -s /usr/sbin/nologin app
+#RUN addgroup -g 1001 app \
+#    && adduser -u 1001 -S -D -G app -s /usr/sbin/nologin app
+
+#Dockerfile from https://github.com/mozilla-services/syncserver
 
 ENV LANG C.UTF-8
 
@@ -15,6 +17,7 @@ RUN apk --no-cache update \
     && pip install --upgrade pip \
     && pip install --upgrade --no-cache-dir -r requirements.txt \
     && pip install --upgrade --no-cache-dir -r dev-requirements.txt \
+    && pip install pysqlite2 \
     && apk del g++
 
 COPY . /app
