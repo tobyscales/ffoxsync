@@ -3,14 +3,16 @@
 echo Location: $AZURE_LOCATION
 echo Resource Group: $AZURE_RESOURCE_GROUP
 
+dockerRepo=sunx/mozilla-syncserver
+
 az login --identity
 az configure --defaults location=$AZURE_LOCATION
 az configure --defaults group=$AZURE_RESOURCE_GROUP
 
-cp /code/$GITHUB_REPO/Dockerfile /mozilla/syncserver/Dockerfile -f
-cd /mozilla/syncserver
+cp /code/$GITHUB_REPO/Dockerfile /$dockerRepo/Dockerfile -f
+cd /$dockerRepo
 
-#az acr create --name $AZURE_RESOURCE_GROUP --sku Standard --admin-enabled true
+az acr create --name $AZURE_RESOURCE_GROUP --sku Standard --admin-enabled true
 
 az acr build --image syncserver:v1 --registry $AZURE_RESOURCE_GROUP --file Dockerfile .
 az logout
@@ -31,7 +33,7 @@ az container create --name $AZURE_RESOURCE_GROUP\
  --azure-file-volume-account-name $AZURE_STORAGE_ACCOUNT --azure-file-volume-share-name $AZURE_STORAGE_SHARE\
  --command-line "tail -f /dev/null"\
  --ip-address Public --dns-name-label $AZURE_STORAGE_ACCOUNT  --ports 5000\
- --environment-variables SYNCSERVER_SQLURI="sqlite:///home/$AZURE_STORAGE_SHARE/syncserver.db" SYNCSERVER_PUBLIC_URL="$AZURE_RESOURCE_GROUP.$AZURE_LOCATION.azurecontainer.io" PORT="5000"
+ --environment-variables PUBLIC_URL="http://$AZURE_RESOURCE_GROUP.$AZURE_LOCATION.azurecontainer.io" SYNCSERVER_SQLURI="sqlite:///home/$AZURE_STORAGE_SHARE/syncserver.db" SYNCSERVER_PUBLIC_URL="$AZURE_RESOURCE_GROUP.$AZURE_LOCATION.azurecontainer.io" PORT="5000"
  
 
 ## uncomment the below statement to troubleshoot your startup script interactively in ACI (on the Connect tab)
