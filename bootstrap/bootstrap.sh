@@ -7,12 +7,17 @@ az login --identity
 az configure --defaults location=$AZURE_LOCATION
 az configure --defaults group=$AZURE_RESOURCE_GROUP
 
-cp /$BOOTSTRAP_REPO/Dockerfile /$GITHUB_REPO/Dockerfile -f
+#cp /$BOOTSTRAP_REPO/Dockerfile /$GITHUB_REPO/Dockerfile -f
 cd /$GITHUB_REPO
 
-az acr create --name $AZURE_RESOURCE_GROUP --sku Standard --admin-enabled true
+#VGoshev specific
+cd docker
+cp /$BOOTSTRAP_REPO/Dockerfile /$GITHUB_REPO/docker/Dockerfile -f
+
+#az acr create --name $AZURE_RESOURCE_GROUP --sku Standard --admin-enabled true
 
 az acr build --image syncserver:v1 --registry $AZURE_RESOURCE_GROUP --file Dockerfile .
+
 az logout
 az login --identity
 
