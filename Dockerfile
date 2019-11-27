@@ -1,36 +1,29 @@
-FROM alpine:3.10
-MAINTAINER Vladimir Goshev <sunx@sunx.name>
+FROM nginx:mainline
+LABEL MAINTAINER="Toby Scales <docker@scales.cloud>"
 
-# DATA_DIR:
-# Where we will store config and db.
-#  Also it's user home directory.
-# Default: /home/ffsync
-#
-# GIT_COMMIT:
-# Git commit hash from 
-#  https://github.com/mozilla-services/syncserver
-#  which we want to use for our Mozilla Syncserver
-# uUID - set UID of ffsync user, default: 2016
-# uGID - set GID of ffsync user, default: 2016
-ENV DATA_DIR="/home/ffsync" \
-	GIT_COMMIT="ac7b29cc40348330be899437b4a8b3ee9d341127"
+# Update this value to your desired SSL site
+ENV SSLSITE="sync.scales.cloud"
 
-# Whole installation process is in build.sh
-# It is possible to do all work via RUN command(s)
-# But it looks much better with all work in script
-COPY build.sh /tmp/build.sh
-# Execute our build script and delete it because we won't need it anymore
-RUN /tmp/build.sh "$GIT_COMMIT" "$DATA_DIR" && rm /tmp/build.sh
+WORKDIR /acme
+
+# don't need to install it, copy it from the git folder
+#curl https://raw.githubusercontent.com/Neilpang/acme.sh/master/acme.sh | INSTALLONLINE=1  sh
+COPY . /home/acme.sh
+
+RUN apt-get -y update && \
+    apt-get -y install curl && \
+    apt-get -y install cron && \
+    /home/acme.sh --install  \
+        --home /home \
+        --config-home /home/acmeconfig \
+        --cert-home  /home/acmecerts && \
+    /home/acme.sh --issue -d $SSLSITE -w /var/www/html
+
+RUN /home/acme.sh --install-cert -d $SSLSITE \
+    --cert-file /etc/nginx/certs/cert.pem \
+    --key-file /etc/nginx/certs/privkey.pem \
+    --fullchain-file /etc/nginx/certs/fullchain.pem \
+    --reloadcmd "service nginx reload"
 
 
-COPY syncserver.ini /usr/local/share/syncserver.ini
-# Container initialization scripts
-COPY docker-run docker-run-root /bin/
-
-#EXPOSE 5000
-#VOLUME $DATA_DIR
-
-# Container will run some preparations with root access (fixing permissions, for example)
-#   and then execute /bin/docker-run with user access to configure (if needed) and run
-#		Syncserver
-CMD ["/bin/docker-run"]
+#ENTRYPOINT ["/app/docker-entrypoint.sh"]
