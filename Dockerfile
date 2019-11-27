@@ -15,11 +15,8 @@ RUN apt-get -y update && \
     apt-get -y install curl && \
     apt-get -y install cron
 RUN chmod 755 /home/acme.sh
-RUN /home/acme.sh --install  \
-        --home /home \
-        --config-home /home/acmeconfig \
-        --cert-home  /home/acmecerts && \
-    /home/acme.sh --issue -d $SSLSITE -w /var/www/html
+RUN /home/acme.sh --install
+RUN /home/acme.sh --issue -d $SSLSITE -w /var/www/html
 
 RUN /home/acme.sh --install-cert -d $SSLSITE \
     --cert-file /etc/nginx/certs/cert.pem \
