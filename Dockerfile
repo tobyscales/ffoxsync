@@ -14,11 +14,10 @@ COPY . /home/acme.sh
 RUN apt-get -y update && \
     apt-get -y install curl && \
     apt-get -y install cron
-RUN chmod 755 /home/acme.sh
-RUN /home/acme.sh --install
-RUN /home/acme.sh --issue -d $SSLSITE -w /var/www/html
+RUN curl https://get.acme.sh | sh
+RUN ~/.acme.sh/acme.sh --issue -d $SSLSITE -w /var/www/html
 
-RUN /home/acme.sh --install-cert -d $SSLSITE \
+RUN ~/.acme.sh/acme.sh --install-cert -d $SSLSITE \
     --cert-file /etc/nginx/certs/cert.pem \
     --key-file /etc/nginx/certs/privkey.pem \
     --fullchain-file /etc/nginx/certs/fullchain.pem \
