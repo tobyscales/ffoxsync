@@ -25,18 +25,18 @@ password=$(az acr credential show --name $AZURE_RESOURCE_GROUP --query passwords
 imageServer=$(az acr show --name $AZURE_RESOURCE_GROUP --query loginServer --output tsv)
 
 echo Setting up storage accounts...
-az storage share create -n $AZURE_STORAGE_SHARE --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
+#az storage share create -n $AZURE_STORAGE_SHARE --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
+#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
 
 echo Setting up Nginx storage accounts...
 az storage share create -n nginx-config --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
+az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-config --permissions dlrw
 
 az storage share create -n nginx-html --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
+az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-html --permissions dlrw
 
 az storage share create -n nginx-certs --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
+az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-certs --permissions dlrw
 
 az storage file upload --source /$GITHUB_REPO/conf/nginx.conf --share-name nginx-config 
 az storage file upload --source /$GITHUB_REPO/html/index.html --share-name nginx-html 
