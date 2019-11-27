@@ -14,7 +14,7 @@ COPY . /home/acme.sh
 RUN apt-get -y update && \
     apt-get -y install curl && \
     apt-get -y install cron
-
+RUN chmod 755 /home/acme.sh
 RUN /home/acme.sh --install  \
         --home /home \
         --config-home /home/acmeconfig \
