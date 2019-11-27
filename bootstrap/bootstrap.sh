@@ -8,7 +8,7 @@ az configure --defaults location=$AZURE_LOCATION
 az configure --defaults group=$AZURE_RESOURCE_GROUP
 
 #cp /$BOOTSTRAP_REPO/Dockerfile /$GITHUB_REPO/Dockerfile -f
-cd /$GITHUB_REPO
+cd /$BOOTSTRAP_REPO
 
 #VGoshev specific
 #cd docker
