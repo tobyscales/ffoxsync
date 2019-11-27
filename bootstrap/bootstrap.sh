@@ -15,7 +15,11 @@ cd /$BOOTSTRAP_REPO
 #cp /$BOOTSTRAP_REPO/Dockerfile /$GITHUB_REPO/docker/Dockerfile -f
 
 az acr create --name $AZURE_RESOURCE_GROUP --sku Standard --admin-enabled true
-az acr build --image nginx-ssl:v1 --registry $AZURE_RESOURCE_GROUP --file Dockerfile .
+
+git clone https://github.com/Neilpang/acme.sh.git
+cd acme.sh
+
+az acr build --image nginx-ssl:v1 --registry $AZURE_RESOURCE_GROUP --file ../Dockerfile .
 
 az logout
 az login --identity
@@ -38,8 +42,8 @@ az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-html --permiss
 az storage share create -n nginx-certs --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-certs --permissions dlrw
 
-az storage file upload --source /$GITHUB_REPO/conf/nginx.conf --share-name nginx-config 
-az storage file upload --source /$GITHUB_REPO/html/index.html --share-name nginx-html 
+az storage file upload --source /$BOOTSTRAP_REPO/conf/nginx.conf --share-name nginx-config 
+az storage file upload --source /$BOOTSTRAP_REPO/html/index.html --share-name nginx-html 
 
 echo Deploying Nginx+SSL container...
 az deployment create --template-file nginx-ssl.json --parameters StorageAccountName=$AZURE_STORAGE_ACCOUNT StorageAccountKey=$AZURE_STORAGE_KEY

@@ -8,12 +8,14 @@ WORKDIR /acme
 
 # don't need to install it, copy it from the git folder
 #curl https://raw.githubusercontent.com/Neilpang/acme.sh/master/acme.sh | INSTALLONLINE=1  sh
+
 COPY . /home/acme.sh
 
 RUN apt-get -y update && \
     apt-get -y install curl && \
-    apt-get -y install cron && \
-    /home/acme.sh --install  \
+    apt-get -y install cron
+
+RUN /home/acme.sh --install  \
         --home /home \
         --config-home /home/acmeconfig \
         --cert-home  /home/acmecerts && \
@@ -24,6 +26,5 @@ RUN /home/acme.sh --install-cert -d $SSLSITE \
     --key-file /etc/nginx/certs/privkey.pem \
     --fullchain-file /etc/nginx/certs/fullchain.pem \
     --reloadcmd "service nginx reload"
-
 
 #ENTRYPOINT ["/app/docker-entrypoint.sh"]
