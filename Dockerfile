@@ -17,7 +17,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -r /var/lib/apt/lists/*
 
-RUN curl http://get.acme.sh | sh
+RUN curl -k https://get.acme.sh | sh
 RUN crontab -l | sed 's#> /dev/null##' | crontab -
 
 RUN ~/.acme.sh/acme.sh --issue -d $SSLSITE -w /var/www/html --staging
