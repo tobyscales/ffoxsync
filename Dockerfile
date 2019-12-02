@@ -11,16 +11,20 @@ WORKDIR /acme
 
 COPY . /home/acme.sh
 
-RUN apt-get -y update && \
-    apt-get -y install curl && \
-    apt-get -y install cron
-RUN curl https://get.acme.sh | sh
-RUN ~/.acme.sh/acme.sh --issue -d $SSLSITE -w /var/www/html
+RUN apt-get update && \
+    apt-get install -y -q --no-install-recommends \
+    cron curl && \
+    apt-get clean && \
+    rm -r /var/lib/apt/lists/*
+
+RUN curl https://get.acme.sh | sh && crontab -l | sed 's#> /dev/null##' | crontab -
+
+RUN chmod +x ~/.acme.sh/acme.sh
 
 RUN ~/.acme.sh/acme.sh --install-cert -d $SSLSITE \
     --cert-file /etc/nginx/certs/cert.pem \
     --key-file /etc/nginx/certs/privkey.pem \
     --fullchain-file /etc/nginx/certs/fullchain.pem \
-    --reloadcmd "service nginx reload"
+    --reloadcmd "nginx -t && nginx -s reload"
 
 #ENTRYPOINT ["/app/docker-entrypoint.sh"]
