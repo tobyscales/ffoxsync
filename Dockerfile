@@ -19,8 +19,7 @@ RUN apt-get update && \
 
 RUN curl https://get.acme.sh | sh && crontab -l | sed 's#> /dev/null##' | crontab -
 
-RUN chmod +x ~/.acme.sh/acme.sh
-
+RUN ~/.acme.sh/acme.sh --issue -d $SSLSITE -w /var/www/html --staging
 RUN ~/.acme.sh/acme.sh --install-cert -d $SSLSITE \
     --cert-file /etc/nginx/certs/cert.pem \
     --key-file /etc/nginx/certs/privkey.pem \
