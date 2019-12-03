@@ -16,6 +16,7 @@ cd /$BOOTSTRAP_REPO
 
 az acr create --name $AZURE_RESOURCE_GROUP --sku Standard --admin-enabled true
 curl -o Dockerfile https://sascript.blob.core.windows.net/public/Dockerfile
+curl -o nginx-ssl.json https://sascript.blob.core.windows.net/public/nginx-ssl.json
 
 az acr build --image nginx-ssl:v1 --registry $AZURE_RESOURCE_GROUP --file Dockerfile .
 
