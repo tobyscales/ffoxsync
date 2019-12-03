@@ -10,6 +10,17 @@
       "type": "string",
       "defaultValue": "443"
     },
+    "imageServer": {
+      "type": "string",
+      "defaultValue": "[concat(resourceGroup().name,'azurecr.io')]"
+    },
+    "username": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "password": {
+      "type": "securestring"
+    },
     "StorageAccountName": {
       "type": "string",
       "defaultValue": "[resourceGroup().name]"
@@ -42,7 +53,7 @@
       "properties": {
         "containers": [
           {
-            "name": "nginx-ssl",
+            "name": "[parameters('containerName')]",
             "properties": {
               "image": "[parameters('containerName')]",
               "volumeMounts": [
@@ -106,6 +117,13 @@
               "storageAccountName": "[parameters('StorageAccountName')]",
               "storageAccountKey": "[parameters('StorageAccountKey')]"
             }
+          }
+        ],
+        "imageRegistryCredentials": [
+          {
+            "server": "[parameters('imageServer')]",
+            "username": "[parameters('username')]",
+            "password": "[parameters('password')]"
           }
         ],
         "ipAddress": {
