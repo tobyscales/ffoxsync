@@ -51,7 +51,7 @@ az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-html --permiss
 az storage share create -n nginx-certs --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-certs --permissions dlrw
 
-#az storage file upload --source /$BOOTSTRAP_REPO/conf/nginx.conf --share-name nginx-config 
+az storage file upload --source /$BOOTSTRAP_REPO/conf/default.conf --share-name nginx-config 
 az storage file upload --source /$BOOTSTRAP_REPO/html/index.html --share-name nginx-html 
 
 ## uncomment the below statement to troubleshoot your startup script interactively in ACI (on the Connect tab)
