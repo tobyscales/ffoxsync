@@ -55,4 +55,4 @@ az storage file upload --source /$BOOTSTRAP_REPO/conf/default.conf --share-name 
 az storage file upload --source /$BOOTSTRAP_REPO/html/index.html --share-name nginx-html 
 
 ## uncomment the below statement to troubleshoot your startup script interactively in ACI (on the Connect tab)
-tail -f /dev/null
+#tail -f /dev/null

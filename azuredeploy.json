@@ -1,378 +1,473 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "gitHubUser": {
-      "type": "string",
-      "metadata": {
-        "description": "Your GitHub username"
-      },
-      "defaultValue": "tescales"
-    },
-    "gitHubRepo": {
-      "type": "string",
-      "metadata": {
-        "description": "Your GitHub repo"
-      },
-      "defaultValue": "azure-bootstrapper-arm"
-    },
-    "subscriptionId": {
-      "type": "string",
-      "metadata": {
-        "description": "Your Azure Subscription Id"
-      },
-      "defaultValue": "[subscription().subscriptionId]"
-    },
-    "aadTenantId": {
-      "type": "string",
-      "metadata": {
-        "description": "Your AzureAD TenantId"
-      },
-      "defaultValue": "[subscription().tenantId]"
-    },
-    "roleName": {
-      "type": "string",
-      "metadata": {
-        "description": "Choose the Role to Assign"
-      },
-      "defaultValue": "Owner"
-    },
-    "newVaultName": {
-      "type": "string",
-      "metadata": {
-        "description": "Enter a name to deploy a new KeyVault and grant access to the bootstrapper script, or type 'none' to skip."
-      },
-      "defaultValue": "kv-bootstrap"
-    },
-    "port": {
-      "type": "string",
-      "defaultValue": "5000"
-    },
-    "StorageAccountName": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().name]"
-    }
-  },
-  "variables": {
-    "ghURL": "[concat('https://raw.githubusercontent.com/', parameters('gitHubUser'), '/', parameters('gitHubRepo'), '/master')]",
-    "roleAssignmentId": "[guid(resourceGroup().name)]",
-    "cgName": "bootstrapper",
-    "roleDefinitions": {
-      "Owner": {
-        "id": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
-      },
-      "Contributor": {
-        "id": "b24988ac-6180-42a0-ab88-20f7382dd24c"
-      },
-      "Reader": {
-        "id": "acdd72a7-3385-48ef-bd42-f606fba81ae7"
-      },
-      "StorageBlobDataOwner": {
-        "id": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b"
-      },
-      "StorageBlobDataContributor": {
-        "id": "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
-      },
-      "StorageBlobDataReader": {
-        "value": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
-      },
-      "None": {
-        "id": "none"
-      },
-      "none": {
-        "id": "none"
-      }
-    },
-    "chosenRole": "[variables('roleDefinitions')[parameters('roleName')].id]",
-    "roleDefinitionId": "[concat('/subscriptions/', parameters('subscriptionId'), '/providers/Microsoft.Authorization/roleDefinitions/', variables('chosenRole'))]",
-    "containerGroupName": "[resourceGroup().name]",
-    "container1name": "firefox-syncserver",
-    "container1image": "mozilla/syncserver:latest",
-    "StorageAccountName": "[concat(resourceGroup().name, 'stor')]",
-    "StorageShareName": "[concat(resourceGroup().name, 'sync')]",
-    "dbpassword": "[uniqueString(resourceGroup().id)]",
-    "mozilla-repo": "https://github.com//mozilla-services/syncserver"
-  },
-  "resources": [
-    {
-      "name": "[resourceGroup().name]",
-      "type": "Microsoft.ContainerRegistry/registries",
-      "apiVersion": "2017-10-01",
-      "location": "[resourceGroup().location]",
-      "comments": "Container registry for storing docker images",
-      "tags": {
-        "displayName": "Container Registry",
-        "container.registry": "[resourceGroup().name]"
-      },
-      "sku": {
-        "name": "Basic",
-        "tier": "Basic"
-      },
-      "properties": {
-        "adminUserEnabled": "true"
-      }
-    },
-    {
-      "name": "[variables('cgName')]",
-      "type": "Microsoft.ContainerInstance/containerGroups",
-      "apiVersion": "2018-10-01",
-      "location": "[resourcegroup().location]",
-      "dependsOn": [
-        "[variables('StorageAccountName')]"
-      ],
-      "comments": "",
-      "identity": {
-        "type": "SystemAssigned"
-      },
-      "properties": {
-        "containers": [
-          {
-            "name": "bootstrapper",
-            "properties": {
-              "image": "mcr.microsoft.com/azure-cli",
-              "command": [
-                "/bin/bash",
-                "-c",
-                "chmod +x /code/$GITHUB_REPO/bootstrap/bootstrap.sh; /code/$GITHUB_REPO/bootstrap/bootstrap.sh"
-              ],
-              "volumeMounts": [
-                {
-                  "name": "git-volume",
-                  "mountPath": "/code"
-                },
-                {
-                  "name": "git-mozilla",
-                  "mountPath": "/mozilla"
-                },
-                {
-                  "name": "ext-storage",
-                  "mountPath": "/home/ffsync"
-                }
-              ],
-              "environmentVariables": [
-                {
-                  "name": "GITHUB_REPO",
-                  "value": "[parameters('gitHubRepo')]"
-                },
-                {
-                  "name": "AZURE_RESOURCE_GROUP",
-                  "value": "[resourceGroup().name]"
-                },
-                {
-                  "name": "AZURE_LOCATION",
-                  "value": "[resourceGroup().location]"
-                },
-                {
-                  "name": "AZURE_SUBSCRIPTION_ID",
-                  "value": "[parameters('subscriptionId')]"
-                },
-                {
-                  "name": "AZURE_AADTENANT_ID",
-                  "value": "[parameters('aadTenantId')]"
-                },
-                {
-                  "name": "AZURE_KEYVAULT",
-                  "value": "[parameters('newVaultName')]"
-                },
-                {
-                  "name": "AZURE_STORAGE_KEY",
-                  "securevalue": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
-                },
-                {
-                  "name": "AZURE_STORAGE_ACCOUNT",
-                  "value": "[variables('storageAccountName')]"
-                },
-                {
-                  "name": "AZURE_STORAGE_SHARE",
-                  "value": "[variables('storageShareName')]"
-                }
-              ],
-              "ports": [
-                {
-                  "port": "[parameters('port')]"
-                }
-              ],
-              "resources": {
-                "requests": {
-                  "cpu": "1",
-                  "memoryInGb": "1"
-                }
-              }
-            }
-          }
-        ],
-        "restartPolicy": "OnFailure",
-        "osType": "Linux",
-        "volumes": [
-          {
-            "name": "git-volume",
-            "gitRepo": {
-              "repository": "[concat('https://github.com/', parameters('gitHubUser'), '/', parameters('gitHubRepo'))]"
-            }
-          },
-          {
-            "name": "git-mozilla",
-            "gitRepo": {
-              "repository": "[variables('mozilla-repo')]"
-            }
-          },
-          {
-            "name": "ext-storage",
-            "azureFile": {
-              "shareName": "[variables('StorageShareName')]",
-              "readOnly": false,
-              "storageAccountName": "[variables('StorageAccountName')]",
-              "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
-            }
-          }
-        ],
-        "ipAddress": {
-          "type": "Public",
-          "ports": [
-            {
-              "protocol": "tcp",
-              "port": "[parameters('port')]"
-            }
-          ],
-          "dnsNameLabel": "ffoxsync123"
-        }
-      }
-    },
-    {
-      "condition": "[not(equals(variables('chosenRole'),'none'))]",
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2017-09-01",
-      "name": "[variables('roleAssignmentId')]",
-      "dependsOn": [
-        "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
-      ],
-      "properties": {
-        "roleDefinitionId": "[variables('roleDefinitionId')]",
-        "principalId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.principalId]",
-        "scope": "[resourcegroup().id]"
-      }
-    },
-    {
-      "condition": "[not(equals(parameters('newVaultName'),'none'))]",
-      "name": "[parameters('newVaultName')]",
-      "type": "Microsoft.KeyVault/vaults",
-      "apiVersion": "2016-10-01",
-      "location": "[resourcegroup().location]",
-      "tags": {},
-      "dependsOn": [
-        "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
-      ],
-      "properties": {
-        "tenantId": "[parameters('aadTenantId')]",
-        "sku": {
-          "family": "A",
-          "name": "standard"
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "gitHubUser": {
+            "type": "string",
+            "metadata": {
+                "description": "Your GitHub username"
+            },
+            "defaultValue": "tescales"
         },
-        "accessPolicies": [
-          {
-            "tenantId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.tenantId]",
-            "objectId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.principalId]",
-            "permissions": {
-              "keys": [],
-              "secrets": [
-                "all"
-              ],
-              "certificates": [],
-              "storage": []
+        "gitHubRepo": {
+            "type": "string",
+            "metadata": {
+                "description": "Your GitHub repo"
+            },
+            "defaultValue": "azure-bootstrapper-arm"
+        },
+        "subscriptionId": {
+            "type": "string",
+            "metadata": {
+                "description": "Your Azure Subscription Id"
+            },
+            "defaultValue": "[subscription().subscriptionId]"
+        },
+        "aadTenantId": {
+            "type": "string",
+            "metadata": {
+                "description": "Your AzureAD TenantId"
+            },
+            "defaultValue": "[subscription().tenantId]"
+        },
+        "roleName": {
+            "type": "string",
+            "metadata": {
+                "description": "Choose the Role to Assign"
+            },
+            "defaultValue": "Owner"
+        },
+        "newVaultName": {
+            "type": "string",
+            "metadata": {
+                "description": "Enter a name to deploy a new KeyVault and grant access to the bootstrapper script, or type 'none' to skip."
+            },
+            "defaultValue": "kv-bootstrap"
+        },
+        "port": {
+            "type": "string",
+            "defaultValue": "443"
+        },
+        "SyncStorageAccount": {
+            "type": "string",
+            "defaultValue": "[concat(resourceGroup().name, 'stor')]"
+        },
+        "SyncStorageShareName": {
+            "type": "string",
+            "defaultValue": "ffsync-data"
+        },
+        "ssl-email": {
+            "type": "string",
+            "defaultValue": "certbot@eff.org"
+        },
+        "ssl-domains": {
+            "type": "string",
+            "metadata": {
+                "description": "Provide a comma-separated list of domains to acquire SSL certificates for here."
             }
-          }
-        ],
-        "enabledForTemplateDeployment": true
-      }
+        },
+        "ssl-env": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Set to --staging to use LetsEncrypt staging servers; recommended for testing."
+            }
+
+        }
     },
-    {
-      "name": "[variables('containerGroupName')]",
-      "type": "Microsoft.ContainerInstance/containerGroups",
-      "apiVersion": "2018-10-01",
-      "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[resourceId('Microsoft.ContainerInstance/containerGroups/', 'bootstrapper')]"
-      ],
-      "properties": {
-        "containers": [
-          {
-            "name": "[variables('container1name')]",
+    "variables": {
+        "NginxConfigShare": "nginx-config",
+        "NginxHtmlShare": "nginx-html",
+        "NginxCertShare": "nginx-certs",
+        "imagePath": "mcr.microsoft.com/azure-cli",
+        "imageName": "[take(toLower( split(variables('imagePath'),'/')[1]),23)]",
+        "cgName": "[concat('deploy_', variables('imageName'))]",
+        "roleDefinitions": {
+            "Owner": {
+                "id": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
+            },
+            "Contributor": {
+                "id": "b24988ac-6180-42a0-ab88-20f7382dd24c"
+            },
+            "Reader": {
+                "id": "acdd72a7-3385-48ef-bd42-f606fba81ae7"
+            },
+            "StorageBlobDataOwner": {
+                "id": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b"
+            },
+            "StorageBlobDataContributor": {
+                "id": "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
+            },
+            "StorageBlobDataReader": {
+                "value": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
+            },
+            "None": {
+                "id": "none"
+            },
+            "none": {
+                "id": "none"
+            }
+        },
+        "chosenRole": "[variables('roleDefinitions')[parameters('roleName')].id]",
+        "roleDefinitionId": "[concat('/subscriptions/', parameters('subscriptionId'), '/providers/Microsoft.Authorization/roleDefinitions/', variables('chosenRole'))]",
+        "roleAssignmentId": "[guid(resourceGroup().name)]",
+        "containerGroupName": "[resourceGroup().name]",
+        "dbuser": "[resourceGroup().name]",
+        "dbpass": "[uniqueString(resourceGroup().id)]",
+        "StorageAccountName": "[take(parameters('SyncStorageAccount'),23)]",
+        "SyncStorageShare": "[parameters('SyncStorageShareName')]"
+    },
+    "resources": [
+        {
+            "name": "[variables('cgName')]",
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2018-10-01",
+            "location": "[resourcegroup().location]",
+            "comments": "",
+            "identity": {
+                "type": "SystemAssigned"
+            },
             "properties": {
-              "image": "[variables('container1image')]",
-              "resources": {
-                "requests": {
-                  "cpu": 1,
-                  "memoryInGb": 1.5
-                }
-              },
-              "volumeMounts": [
-                {
-                  "name": "ext-storage",
-                  "mountPath": "/home/ffsync"
-                }
-              ],
-              "ports": [
-                {
-                  "port": "[parameters('port')]"
-                }
-              ],
-              "environmentVariables": [
-                {
-                  "name": "SYNCSERVER_PUBLIC_URL",
-                  "value": "[concat('http://', variables('containerGroupName'), '.', resourceGroup().location, '.azurecontainer.io')]"
-                },
-                {
-                  "name": "SYNCSERVER_SECRET",
-                  "securevalue": "[variables('dbpassword')]"
-                },
-                {
-                  "name": "SYNCSERVER_BATCH_UPLOAD_ENABLED",
-                  "value": "true"
-                },
-                {
-                  "name": "FF_SYNCSERVER_FORCE_WSGI_ENVIRON",
-                  "value": "true"
-                },
-                {
-                  "name": "SYNCSERVER_SQLURI",
-                  "value": "sqlite:////home/ffsync/syncserver.db"
-                },
-                {
-                  "name": "PORT",
-                  "value": "[parameters('port')]"
-                }
-              ]
+                "containers": [
+                    {
+                        "name": "[variables('imageName')]",
+                        "properties": {
+                            "image": "[variables('imagePath')]",
+                            "command": [
+                                "/bin/bash",
+                                "-c",
+                                "chmod +x /$BOOTSTRAP_REPO/bootstrap/bootstrap.sh; /$BOOTSTRAP_REPO/bootstrap/bootstrap.sh"
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "name": "git-bootstrapper",
+                                    "mountPath": "[concat('/', parameters('gitHubUser'))]"
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "BOOTSTRAP_REPO",
+                                    "value": "[concat(parameters('gitHubUser'), '/', parameters('gitHubRepo'))]"
+                                },
+                                {
+                                    "name": "AZURE_RESOURCE_GROUP",
+                                    "value": "[resourceGroup().name]"
+                                },
+                                {
+                                    "name": "AZURE_LOCATION",
+                                    "value": "[resourceGroup().location]"
+                                },
+                                {
+                                    "name": "AZURE_SUBSCRIPTION_ID",
+                                    "value": "[parameters('subscriptionId')]"
+                                },
+                                {
+                                    "name": "AZURE_AADTENANT_ID",
+                                    "value": "[parameters('aadTenantId')]"
+                                },
+                                {
+                                    "name": "AZURE_KEYVAULT",
+                                    "value": "[parameters('newVaultName')]"
+                                },
+                                {
+                                    "name": "AZURE_STORAGE_KEY",
+                                    "securevalue": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
+                                },
+                                {
+                                    "name": "AZURE_STORAGE_ACCOUNT",
+                                    "value": "[variables('storageAccountName')]"
+                                },
+                                {
+                                    "name": "AZURE_STORAGE_SHARE",
+                                    "value": "[variables('SyncStorageShare')]"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": "1",
+                                    "memoryInGb": "1"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "restartPolicy": "OnFailure",
+                "osType": "Linux",
+                "volumes": [
+                    {
+                        "name": "git-bootstrapper",
+                        "gitRepo": {
+                            "repository": "[concat('https://github.com/', parameters('gitHubUser'), '/', parameters('gitHubRepo'))]"
+                        }
+                    }
+                ]
             }
-          }
-        ],
-        "osType": "Linux",
-        "volumes": [
-          {
-            "name": "ext-storage",
-            "azureFile": {
-              "shareName": "[variables('StorageShareName')]",
-              "readOnly": false,
-              "storageAccountName": "[variables('StorageAccountName')]",
-              "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
+        },
+        {
+            "condition": "[not(equals(variables('chosenRole'),'none'))]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2017-09-01",
+            "name": "[variables('roleAssignmentId')]",
+            "dependsOn": [
+                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[variables('roleDefinitionId')]",
+                "principalId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.principalId]",
+                "scope": "[resourcegroup().id]"
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "[variables('StorageAccountName')]",
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2018-02-01",
-      "location": "[resourceGroup().location]",
-      "tags": {
-        "description": "Used for Firefox Sync Storage"
-      },
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "kind": "StorageV2",
-      "properties": {}
+        },
+        {
+            "condition": "[not(equals(parameters('newVaultName'),'none'))]",
+            "name": "[parameters('newVaultName')]",
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2016-10-01",
+            "location": "[resourcegroup().location]",
+            "tags": {
+            },
+            "dependsOn": [
+                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
+            ],
+            "properties": {
+                "tenantId": "[parameters('aadTenantId')]",
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "accessPolicies": [
+                    {
+                        "tenantId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [
+                            ],
+                            "secrets": [
+                                "all"
+                            ],
+                            "certificates": [
+                            ],
+                            "storage": [
+                            ]
+                        }
+                    }
+                ],
+                "enabledForTemplateDeployment": true
+            }
+        },
+        {
+            "name": "[variables('containerGroupName')]",
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2018-10-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
+            ],
+            "properties": {
+                "containers": [
+                    {
+                        "name": "mysql",
+                        "properties": {
+                            "image": "mysql:5.6",
+                            "ports": [
+                                {
+                                    "protocol": "Tcp",
+                                    "port": 3306
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "MYSQL_USER",
+                                    "value": "[variables('dbuser')]"
+                                },
+                                {
+                                    "name": "MYSQL_PASSWORD",
+                                    "value": "[variables('dbpass')]"
+                                },
+                                {
+                                    "name": "MYSQL_DATABASE",
+                                    "value": "syncdb"
+                                },
+                                {
+                                    "name": "MYSQL_RANDOM_ROOT_PASSWORD",
+                                    "value": "yes"
+                                }
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/var/lib/mysql",
+                                    "name": "ext-storage"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": "1",
+                                    "memoryInGb": "1"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "firefox-syncserver",
+                        "properties": {
+                            "image": "mozilla/syncserver:latest",
+                            "ports": [
+                                {
+                                    "protocol": "Tcp",
+                                    "port": 5000
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGb": 1
+                                }
+                            },
+                            "environmentVariables": [
+                                {
+                                    "name": "SYNCSERVER_PUBLIC_URL",
+                                    "value": "[concat('https://', parameters('ssl-domains'))]"
+                                },
+                                {
+                                    "name": "SYNCSERVER_BATCH_UPLOAD_ENABLED",
+                                    "value": "false"
+                                },
+                                {
+                                    "name": "SYNCSERVER_FORCE_WSGI_ENVIRON",
+                                    "value": "false"
+                                },
+                                {
+                                    "name": "SYNCSERVER_SQLURI",
+                                    "value": "[concat('pymysql://',variables('dbuser'),':', variables('dbpass'),'@','127.0.0.1/syncdb')]"
+                                },
+                                {
+                                    "name": "PORT",
+                                    "value": "5000"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "nginx-ssl",
+                        "properties": {
+                            "image": "andreilhicas/nginx-letsencrypt",
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/etc/nginx/conf.d",
+                                    "name": "nginx-config"
+                                },
+                                {
+                                    "mountPath": "/var/www/html",
+                                    "name": "nginx-html"
+                                },
+                                {
+                                    "mountPath": "/usr/share/nginx/certificates",
+                                    "name": "nginx-certs"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGb": 1.5
+                                }
+                            },
+                            "environmentVariables": [
+                                {
+                                    "name": "EMAIL",
+                                    "value": "[parameters('ssl-email')]"
+                                },
+                                {
+                                    "name": "DOMAIN",
+                                    "value": "[parameters('ssl-domains')]"
+                                },
+                                {
+                                    "name": "OPTIONS",
+                                    "value": "[parameters('ssl-env')]"
+                                }
+                            ],
+                            "ports": [
+                                {
+                                    "port": "80",
+                                    "protocol": "TCP"
+                                },
+                                {
+                                    "port": "[parameters('port')]",
+                                    "protocol": "TCP"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "osType": "Linux",
+                "volumes": [
+                    {
+                        "name": "nginx-config",
+                        "azureFile": {
+                            "shareName": "[variables('NginxConfigShare')]",
+                            "readOnly": true,
+                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "nginx-html",
+                        "azureFile": {
+                            "shareName": "[variables('NginxHtmlShare')]",
+                            "readOnly": false,
+                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "nginx-certs",
+                        "azureFile": {
+                            "shareName": "[variables('NginxCertShare')]",
+                            "readOnly": false,
+                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "ext-storage",
+                        "azureFile": {
+                            "shareName": "[variables('SyncStorageShare')]",
+                            "readOnly": false,
+                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
+                        }
+                    }
+                ],
+                "ipAddress": {
+                    "type": "Public",
+                    "ports": [
+                        {
+                            "protocol": "tcp",
+                            "port": "[parameters('port')]"
+                        },
+                        {
+                            "protocol": "tcp",
+                            "port": "80"
+                        }
+                    ],
+                    "dnsNameLabel": "[variables('containerGroupName')]"
+                }
+            }
+        },
+        {
+            "name": "[variables('StorageAccountName')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2018-02-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "description": "Used for Firefox Sync Storage"
+            },
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2",
+            "properties": {
+            }
+        }
+    ],
+    "outputs": {
     }
-  ],
-  "outputs": {}
 }

@@ -7,3 +7,6 @@ author: tescales
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
+# TODO:
+ write this 
+ add support for pre-existing storage account
