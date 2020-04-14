@@ -36,8 +36,8 @@ Simply click the buttons below to deploy, or if you prefer fork the repo and use
 services: `azure-container-instances,azure-files,docker,nginx,letsencrypt,mozilla-sync-server`
 
 # TODO:
-  add conditional deployment option for LetsEncrypt support
-  add support for pre-existing storage account
-  add ACI DNS name as output
-  add support for storing config data in keyvault
+* add conditional deployment option for LetsEncrypt support
+* add support for pre-existing storage account
+* add ACI DNS name as output
+* add support for storing config data in keyvault
   
