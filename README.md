@@ -23,6 +23,7 @@ Simply click the buttons below to deploy, or if you prefer fork the repo and use
 | roleName   | used to assign access to the deployment container  | defaults to Owner (for this Resource Group only) |
 | newVaultName | creates a new KV and stores deployment secrets there | defaults to none |
 | syncStorageAccount | name for new Azure Files storage account | defaults to Resource Group Name + "stor" |
+| syncStorageShareName | name for Azure Files container where sync data lives | defaults to ffsync-data |
 | syncDomainName | public DNS record for your Firefox Sync Server | required for SSL support |
 | syncPort | publicly-exposed port for your Firefox Sync Server | defaults to 443 |
 | ssl-email | email address to use for LetsEncrypt registration | defaults to certbot@eff.org |
