@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "gitHubUser": {
@@ -44,33 +44,33 @@
             },
             "defaultValue": "kv-bootstrap"
         },
-        "port": {
-            "type": "string",
-            "defaultValue": "443"
-        },
-        "SyncStorageAccount": {
+        "syncStorageAccount": {
             "type": "string",
             "defaultValue": "[concat(resourceGroup().name, 'stor')]"
         },
-        "SyncStorageShareName": {
+        "syncStorageShareName": {
             "type": "string",
             "defaultValue": "ffsync-data"
+        },
+        "syncDomainName": {
+            "type": "string",
+            "metadata": {
+                "description": "Domain to use for Firefox Sync Server."
+            }
+        },
+        "syncPort": {
+            "type": "string",
+            "defaultValue": "443"
         },
         "ssl-email": {
             "type": "string",
             "defaultValue": "certbot@eff.org"
         },
-        "ssl-domains": {
-            "type": "string",
-            "metadata": {
-                "description": "Provide a comma-separated list of domains to acquire SSL certificates for here."
-            }
-        },
         "ssl-env": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "Set to --staging to use LetsEncrypt staging servers; recommended for testing."
+                "description": "Set to 'staging' to use LetsEncrypt staging servers; recommended for testing."
             }
 
         }
@@ -79,6 +79,7 @@
         "NginxConfigShare": "nginx-config",
         "NginxHtmlShare": "nginx-html",
         "NginxCertShare": "nginx-certs",
+        "ssl-env": "[concat('--',parameters('ssl-env'))]",
         "imagePath": "mcr.microsoft.com/azure-cli",
         "imageName": "[take(toLower( split(variables('imagePath'),'/')[1]),23)]",
         "cgName": "[concat('deploy_', variables('imageName'))]",
@@ -101,9 +102,6 @@
             "StorageBlobDataReader": {
                 "value": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
             },
-            "None": {
-                "id": "none"
-            },
             "none": {
                 "id": "none"
             }
@@ -113,9 +111,10 @@
         "roleAssignmentId": "[guid(resourceGroup().name)]",
         "containerGroupName": "[resourceGroup().name]",
         "dbuser": "[resourceGroup().name]",
-        "dbpass": "[uniqueString(resourceGroup().id)]",
-        "StorageAccountName": "[take(parameters('SyncStorageAccount'),23)]",
-        "SyncStorageShare": "[parameters('SyncStorageShareName')]"
+        "dbpass": "[uniqueString(resourceGroup().id, deployment().name)]",
+        "syncsecret": "[base64(concat(uniqueString(subscription().id),uniqueString(resourceGroup().id)))]",
+        "storageAccountName": "[take(parameters('syncStorageAccount'),23)]",
+        "syncStorageShare": "[parameters('syncStorageShareName')]"
     },
     "resources": [
         {
@@ -179,7 +178,15 @@
                                 },
                                 {
                                     "name": "AZURE_STORAGE_SHARE",
-                                    "value": "[variables('SyncStorageShare')]"
+                                    "value": "[variables('syncStorageShare')]"
+                                },
+                                {
+                                    "name": "SYNC_DOMAIN",
+                                    "value": "[parameters('syncDomainName')]"
+                                },
+                                {
+                                    "name": "SYNC_PORT",
+                                    "value": "[parameters('syncPort')]"
                                 }
                             ],
                             "resources": {
@@ -260,7 +267,8 @@
             "apiVersion": "2018-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
+                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
             ],
             "properties": {
                 "containers": [
@@ -281,7 +289,7 @@
                                 },
                                 {
                                     "name": "MYSQL_PASSWORD",
-                                    "value": "[variables('dbpass')]"
+                                    "secureValue": "[variables('dbpass')]"
                                 },
                                 {
                                     "name": "MYSQL_DATABASE",
@@ -295,13 +303,13 @@
                             "volumeMounts": [
                                 {
                                     "mountPath": "/var/lib/mysql",
-                                    "name": "ext-storage"
+                                    "name": "sync-storage"
                                 }
                             ],
                             "resources": {
                                 "requests": {
-                                    "cpu": "1",
-                                    "memoryInGb": "1"
+                                    "cpu": ".5",
+                                    "memoryInGb": ".5"
                                 }
                             }
                         }
@@ -313,35 +321,39 @@
                             "ports": [
                                 {
                                     "protocol": "Tcp",
-                                    "port": 5000
+                                    "port": "5000"
                                 }
                             ],
                             "resources": {
                                 "requests": {
-                                    "cpu": 1,
-                                    "memoryInGb": 1
+                                    "cpu": ".5",
+                                    "memoryInGb": ".5"
                                 }
                             },
                             "environmentVariables": [
                                 {
                                     "name": "SYNCSERVER_PUBLIC_URL",
-                                    "value": "[concat('https://', parameters('ssl-domains'))]"
-                                },
-                                {
-                                    "name": "SYNCSERVER_BATCH_UPLOAD_ENABLED",
-                                    "value": "false"
-                                },
-                                {
-                                    "name": "SYNCSERVER_FORCE_WSGI_ENVIRON",
-                                    "value": "false"
-                                },
-                                {
-                                    "name": "SYNCSERVER_SQLURI",
-                                    "value": "[concat('pymysql://',variables('dbuser'),':', variables('dbpass'),'@','127.0.0.1/syncdb')]"
+                                    "value": "[concat('https://', parameters('syncDomainName'))]"
                                 },
                                 {
                                     "name": "PORT",
                                     "value": "5000"
+                                },
+                                {
+                                    "name": "SYNCSERVER_BATCH_UPLOAD_ENABLED",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "SYNCSERVER_FORCE_WSGI_ENVIRON",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "SYNCSERVER_SECRET",
+                                    "secureValue": "[variables('syncsecret')]"
+                                },
+                                {
+                                    "name": "SYNCSERVER_SQLURI",
+                                    "secureValue": "[concat('pymysql://',variables('dbuser'),':', variables('dbpass'),'@','127.0.0.1/syncdb')]"
                                 }
                             ]
                         }
@@ -366,22 +378,22 @@
                             ],
                             "resources": {
                                 "requests": {
-                                    "cpu": 1,
-                                    "memoryInGb": 1.5
+                                    "cpu": ".5",
+                                    "memoryInGb": ".5"
                                 }
                             },
                             "environmentVariables": [
+                                {
+                                    "name": "DOMAIN",
+                                    "value": "[parameters('syncDomainName')]"
+                                },
                                 {
                                     "name": "EMAIL",
                                     "value": "[parameters('ssl-email')]"
                                 },
                                 {
-                                    "name": "DOMAIN",
-                                    "value": "[parameters('ssl-domains')]"
-                                },
-                                {
                                     "name": "OPTIONS",
-                                    "value": "[parameters('ssl-env')]"
+                                    "value": "[if(empty(parameters('ssl-env')),'',variables('ssl-env'))]"
                                 }
                             ],
                             "ports": [
@@ -390,7 +402,7 @@
                                     "protocol": "TCP"
                                 },
                                 {
-                                    "port": "[parameters('port')]",
+                                    "port": "[parameters('SyncPort')]",
                                     "protocol": "TCP"
                                 }
                             ]
@@ -404,7 +416,7 @@
                         "azureFile": {
                             "shareName": "[variables('NginxConfigShare')]",
                             "readOnly": true,
-                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountName": "[variables('storageAccountName')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
                         }
                     },
@@ -413,7 +425,7 @@
                         "azureFile": {
                             "shareName": "[variables('NginxHtmlShare')]",
                             "readOnly": false,
-                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountName": "[variables('storageAccountName')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
                         }
                     },
@@ -422,16 +434,16 @@
                         "azureFile": {
                             "shareName": "[variables('NginxCertShare')]",
                             "readOnly": false,
-                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountName": "[variables('storageAccountName')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
                         }
                     },
                     {
-                        "name": "ext-storage",
+                        "name": "sync-storage",
                         "azureFile": {
                             "shareName": "[variables('SyncStorageShare')]",
                             "readOnly": false,
-                            "storageAccountName": "[variables('StorageAccountName')]",
+                            "storageAccountName": "[variables('storageAccountName')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountName'),'2017-10-01').keys[0].value]"
                         }
                     }
@@ -441,7 +453,7 @@
                     "ports": [
                         {
                             "protocol": "tcp",
-                            "port": "[parameters('port')]"
+                            "port": "[parameters('SyncPort')]"
                         },
                         {
                             "protocol": "tcp",
@@ -453,7 +465,7 @@
             }
         },
         {
-            "name": "[variables('StorageAccountName')]",
+            "name": "[variables('storageAccountName')]",
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2018-02-01",
             "location": "[resourceGroup().location]",
@@ -466,6 +478,38 @@
             "kind": "StorageV2",
             "properties": {
             }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-04-01",
+            "name": "[concat(variables('storageAccountName'), '/default/', variables('NginxCertShare'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-04-01",
+            "name": "[concat(variables('storageAccountName'), '/default/', variables('NginxConfigShare'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-04-01",
+            "name": "[concat(variables('storageAccountName'), '/default/', variables('NginxHtmlShare'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-04-01",
+            "name": "[concat(variables('storageAccountName'), '/default/', variables('syncStorageShare'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
         }
     ],
     "outputs": {

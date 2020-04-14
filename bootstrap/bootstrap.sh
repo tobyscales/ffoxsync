@@ -39,21 +39,13 @@ echo Firefox Sync Data: $AZURE_STORAGE_SHARE
 echo Firefox Sync Domain: $SYNC_DOMAIN
 echo Firefox Sync Port: $SYNC_PORT
 
-echo Setting up storage accounts...
-az storage share create -n $AZURE_STORAGE_SHARE --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
+echo Setting up sync storage account...
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
 
 echo Setting up Nginx storage accounts...
-az storage share create -n nginx-config --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-config --permissions dlrw
-
-az storage share create -n ff-config --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s ff-config --permissions dlrw
-
-az storage share create -n nginx-html --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
+#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s ff-config --permissions dlrw
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-html --permissions dlrw
-
-az storage share create -n nginx-certs --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-certs --permissions dlrw
 
 # pass env variables through to config scripts
@@ -61,7 +53,7 @@ sed -i 's/{DOMAIN}/'$SYNC_DOMAIN'/g' /$BOOTSTRAP_REPO/conf/*.*
 sed -i 's/{PORT}/'$SYNC_PORT'/g' /$BOOTSTRAP_REPO/conf/*.*
 
 az storage file upload --source /$BOOTSTRAP_REPO/conf/default.conf --share-name nginx-config 
-az storage file upload --source /$BOOTSTRAP_REPO/conf/syncserver.ini --share-name ff-config
+#az storage file upload --source /$BOOTSTRAP_REPO/conf/syncserver.ini --share-name ff-config
 az storage file upload --source /$BOOTSTRAP_REPO/html/index.html --share-name nginx-html 
 
 
