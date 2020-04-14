@@ -33,10 +33,7 @@ Simply click the buttons below to deploy, or if you prefer fork the repo and use
     <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true"/>
 </a>
 
-
-----
 services: `azure-container-instances,azure-files,docker,nginx,letsencrypt,mozilla-sync-server`
-----
 
 # TODO:
   add conditional deployment option for LetsEncrypt support
