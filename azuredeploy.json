@@ -191,8 +191,8 @@
                             ],
                             "resources": {
                                 "requests": {
-                                    "cpu": "1",
-                                    "memoryInGb": "1"
+                                    "cpu": 1,
+                                    "memoryInGb": 1
                                 }
                             }
                         }
@@ -308,8 +308,12 @@
                             ],
                             "resources": {
                                 "requests": {
-                                    "cpu": ".5",
-                                    "memoryInGb": ".5"
+                                    "cpu": 0.25,
+                                    "memoryInGb": 0.5
+                                },
+                                "limits": {
+                                    "cpu": 1,
+                                    "memoryInGb": 1.5
                                 }
                             }
                         }
@@ -321,15 +325,9 @@
                             "ports": [
                                 {
                                     "protocol": "Tcp",
-                                    "port": "5000"
+                                    "port": 5000
                                 }
                             ],
-                            "resources": {
-                                "requests": {
-                                    "cpu": ".5",
-                                    "memoryInGb": ".5"
-                                }
-                            },
                             "environmentVariables": [
                                 {
                                     "name": "SYNCSERVER_PUBLIC_URL",
@@ -355,13 +353,47 @@
                                     "name": "SYNCSERVER_SQLURI",
                                     "secureValue": "[concat('pymysql://',variables('dbuser'),':', variables('dbpass'),'@','127.0.0.1/syncdb')]"
                                 }
-                            ]
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 0.5,
+                                    "memoryInGb": 0.5
+                                },
+                                "limits": {
+                                    "cpu": 1,
+                                    "memoryInGb": 1.5
+                                }
+                            }
                         }
                     },
                     {
                         "name": "nginx-ssl",
                         "properties": {
                             "image": "andreilhicas/nginx-letsencrypt",
+                            "ports": [
+                                {
+                                    "port": 80,
+                                    "protocol": "TCP"
+                                },
+                                {
+                                    "port": "[parameters('SyncPort')]",
+                                    "protocol": "TCP"
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "DOMAIN",
+                                    "value": "[parameters('syncDomainName')]"
+                                },
+                                {
+                                    "name": "EMAIL",
+                                    "value": "[parameters('ssl-email')]"
+                                },
+                                {
+                                    "name": "OPTIONS",
+                                    "value": "[if(empty(parameters('ssl-env')),'',variables('ssl-env'))]"
+                                }
+                            ],
                             "volumeMounts": [
                                 {
                                     "mountPath": "/etc/nginx/conf.d",
@@ -378,34 +410,14 @@
                             ],
                             "resources": {
                                 "requests": {
-                                    "cpu": ".5",
-                                    "memoryInGb": ".5"
-                                }
-                            },
-                            "environmentVariables": [
-                                {
-                                    "name": "DOMAIN",
-                                    "value": "[parameters('syncDomainName')]"
+                                    "cpu": 0.25,
+                                    "memoryInGb": 0.5
                                 },
-                                {
-                                    "name": "EMAIL",
-                                    "value": "[parameters('ssl-email')]"
-                                },
-                                {
-                                    "name": "OPTIONS",
-                                    "value": "[if(empty(parameters('ssl-env')),'',variables('ssl-env'))]"
+                                "limits": {
+                                    "cpu": 1,
+                                    "memoryInGb": 1.5
                                 }
-                            ],
-                            "ports": [
-                                {
-                                    "port": "80",
-                                    "protocol": "TCP"
-                                },
-                                {
-                                    "port": "[parameters('SyncPort')]",
-                                    "protocol": "TCP"
-                                }
-                            ]
+                            }
                         }
                     }
                 ],
@@ -457,7 +469,7 @@
                         },
                         {
                             "protocol": "tcp",
-                            "port": "80"
+                            "port": 80
                         }
                     ],
                     "dnsNameLabel": "[variables('containerGroupName')]"
@@ -481,7 +493,7 @@
         },
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
-            "apiVersion": "2019-04-01",
+            "apiVersion": "2019-06-01",
             "name": "[concat(variables('storageAccountName'), '/default/', variables('NginxCertShare'))]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
@@ -489,7 +501,7 @@
         },
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
-            "apiVersion": "2019-04-01",
+            "apiVersion": "2019-06-01",
             "name": "[concat(variables('storageAccountName'), '/default/', variables('NginxConfigShare'))]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
@@ -497,7 +509,7 @@
         },
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
-            "apiVersion": "2019-04-01",
+            "apiVersion": "2019-06-01",
             "name": "[concat(variables('storageAccountName'), '/default/', variables('NginxHtmlShare'))]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
@@ -505,7 +517,7 @@
         },
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
-            "apiVersion": "2019-04-01",
+            "apiVersion": "2019-06-01",
             "name": "[concat(variables('storageAccountName'), '/default/', variables('syncStorageShare'))]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
