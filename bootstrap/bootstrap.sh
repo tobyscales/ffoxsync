@@ -42,12 +42,13 @@ echo Firefox Sync Port: $SYNC_PORT
 echo Setting up sync storage account...
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
 
-echo Setting up Nginx storage accounts...
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-config --permissions dlrw
+#echo Setting up Nginx storage accounts...
+#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-config --permissions dlrw
 #az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s ff-config --permissions dlrw
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-html --permissions dlrw
-az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-certs --permissions dlrw
-
+#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-html --permissions dlrw
+#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-certs --permissions dlrw
+echo Your FQDN: $ACI_FQDN
+#"syncDomain": "[if(equals(parameters('syncDomainName'),'default'),reference(resourceId('Microsoft.ContainerInstance/containerGroups/', variables('containerGroupName'))).ipAddress.fqdn,parameters('syncDomainName'))]"
 # pass env variables through to config scripts
 sed -i 's/{DOMAIN}/'$SYNC_DOMAIN'/g' /$BOOTSTRAP_REPO/conf/*.*
 sed -i 's/{PORT}/'$SYNC_PORT'/g' /$BOOTSTRAP_REPO/conf/*.*
