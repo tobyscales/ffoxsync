@@ -42,21 +42,15 @@ echo Firefox Sync Port: $SYNC_PORT
 echo Setting up sync storage account...
 az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s $AZURE_STORAGE_SHARE --permissions dlrw
 
-#echo Setting up Nginx storage accounts...
-#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-config --permissions dlrw
-#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s ff-config --permissions dlrw
-#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-html --permissions dlrw
-#az storage share policy create -n $AZURE_STORAGE_ACCOUNT -s nginx-certs --permissions dlrw
-echo Your FQDN: $ACI_FQDN
-#"syncDomain": "[if(equals(parameters('syncDomainName'),'default'),reference(resourceId('Microsoft.ContainerInstance/containerGroups/', variables('containerGroupName'))).ipAddress.fqdn,parameters('syncDomainName'))]"
 # pass env variables through to config scripts
 sed -i 's/{DOMAIN}/'$SYNC_DOMAIN'/g' /$BOOTSTRAP_REPO/conf/*.*
 sed -i 's/{PORT}/'$SYNC_PORT'/g' /$BOOTSTRAP_REPO/conf/*.*
 
 az storage file upload --source /$BOOTSTRAP_REPO/conf/default.conf --share-name nginx-config 
-#az storage file upload --source /$BOOTSTRAP_REPO/conf/syncserver.ini --share-name ff-config
 az storage file upload --source /$BOOTSTRAP_REPO/html/index.html --share-name nginx-html 
 
+#TODO someday: allow dynamic ffox config (would need to inject to container directly due to permissions in Az Fileshare)
+#az storage file upload --source /$BOOTSTRAP_REPO/conf/syncserver.ini --share-name ff-config
 
 #"set" | az container exec --exec-command /bin/sh -n $AZURE_RESOURCE_GROUP -g $AZURE_RESOURCE_GROUP 
 

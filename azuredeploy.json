@@ -55,7 +55,7 @@
         "syncDomainName": {
             "type": "string",
             "metadata": {
-                "description": "Domain to use for Firefox Sync Server."
+                "description": "Domain to use for Firefox Sync Server. Set to 'unsecured' for testing purposes only."
             }
         },
         "syncPort": {
@@ -82,7 +82,7 @@
         "ssl-env": "[concat('--',parameters('ssl-env'))]",
         "imagePath": "mcr.microsoft.com/azure-cli",
         "imageName": "[take(toLower( split(variables('imagePath'),'/')[1]),23)]",
-        "cgName": "[concat('deploy_', variables('imageName'))]",
+        "sidecarCG": "[concat('deploy_', variables('imageName'))]",
         "roleDefinitions": {
             "Owner": {
                 "id": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
@@ -113,12 +113,13 @@
         "dbuser": "[resourceGroup().name]",
         "dbpass": "[uniqueString(resourceGroup().id, deployment().name)]",
         "syncsecret": "[base64(concat(uniqueString(subscription().id),uniqueString(resourceGroup().id)))]",
-        "storageAccountName": "[take(parameters('syncStorageAccount'),23)]",
+        "storageAccountName": "[take(replace(parameters('syncStorageAccount'),'-',''),23)]",
         "syncStorageShare": "[parameters('syncStorageShareName')]"
+        
     },
     "resources": [
         {
-            "name": "[variables('cgName')]",
+            "name": "[variables('sidecarCG')]",
             "type": "Microsoft.ContainerInstance/containerGroups",
             "apiVersion": "2018-10-01",
             "location": "[resourcegroup().location]",
@@ -182,7 +183,7 @@
                                 },
                                 {
                                     "name": "SYNC_DOMAIN",
-                                    "value": "[parameters('syncDomainName')]"
+                                    "value": "[if(equals(parameters('syncDomainName'),'unsecured'),reference(resourceId('Microsoft.ContainerInstance/containerGroups/', variables('containerGroupName'))).ipAddress.fqdn,parameters('syncDomainName'))]"
                                 },
                                 {
                                     "name": "SYNC_PORT",
@@ -216,11 +217,11 @@
             "apiVersion": "2017-09-01",
             "name": "[variables('roleAssignmentId')]",
             "dependsOn": [
-                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
+                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('sidecarCG'))]"
             ],
             "properties": {
                 "roleDefinitionId": "[variables('roleDefinitionId')]",
-                "principalId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.principalId]",
+                "principalId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('sidecarCG')), '2018-10-01', 'Full').identity.principalId]",
                 "scope": "[resourcegroup().id]"
             }
         },
@@ -233,7 +234,7 @@
             "tags": {
             },
             "dependsOn": [
-                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]"
+                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('sidecarCG'))]"
             ],
             "properties": {
                 "tenantId": "[parameters('aadTenantId')]",
@@ -243,8 +244,8 @@
                 },
                 "accessPolicies": [
                     {
-                        "tenantId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.tenantId]",
-                        "objectId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName')), '2018-10-01', 'Full').identity.principalId]",
+                        "tenantId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('sidecarCG')), '2018-10-01', 'Full').identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.ContainerInstance/containerGroups/', variables('sidecarCG')), '2018-10-01', 'Full').identity.principalId]",
                         "permissions": {
                             "keys": [
                             ],
@@ -267,7 +268,6 @@
             "apiVersion": "2018-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.ContainerInstance/containerGroups/', variables('cgName'))]",
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
             ],
             "properties": {
@@ -525,5 +525,13 @@
         }
     ],
     "outputs": {
+        "configureFirefoxWith": {
+            "type": "string",
+            "value": "[concat('In Firefox about:config, ', 'set identity.sync.tokenserver.uri to:')]"
+        },
+        "syncServiceFQDN": {
+            "type": "string",
+            "value": "[concat(if(equals(parameters('syncDomainName'),'unsecured'),reference(resourceId('Microsoft.ContainerInstance/containerGroups/', variables('containerGroupName'))).ipAddress.fqdn,parameters('syncDomainName')), '/token/1.0/sync/1.5')]"
+        }
     }
 }

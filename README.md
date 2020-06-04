@@ -24,7 +24,7 @@ Simply click the buttons below to deploy, or if you prefer fork the repo and use
 | newVaultName | creates a new KV and stores deployment secrets there | defaults to none |
 | syncStorageAccount | name for new Azure Files storage account | defaults to Resource Group Name + "stor" |
 | syncStorageShareName | name for Azure Files container where sync data lives | defaults to ffsync-data |
-| syncDomainName | public DNS record for your Firefox Sync Server | required for SSL support |
+| syncDomainName | public DNS record for your Firefox Sync Server | required for SSL support, can set to 'unsecured' for testing |
 | syncPort | publicly-exposed port for your Firefox Sync Server | defaults to 443 |
 | ssl-email | email address to use for LetsEncrypt registration | defaults to certbot@eff.org |
 | ssl-env | LetsEncrypt environment to use for registration | defaults to blank; set this to "staging" for testing |
@@ -37,8 +37,8 @@ Simply click the buttons below to deploy, or if you prefer fork the repo and use
 services: `azure-container-instances,azure-files,docker,nginx,letsencrypt,mozilla-sync-server`
 
 # TODO:
-* add conditional deployment option for LetsEncrypt support
+* add vnet deployment option to enable conditional LetsEncrypt support
 * add support for pre-existing storage account
-* add ACI DNS name as output
-* add support for storing config data in keyvault
+* add support for using AzureDNS to publish DNS entry
+* add support for storing certs/secrets in keyvault
   
