@@ -3,18 +3,15 @@ $resourceGroup = "ffoxsync"
 $location = "westus2"
 
 ## Project Variables
-$syncDomainName = "sync.scales.cloud"
-$sslenv = "staging"
+$syncDomainName = "sync.mydomain.com"
 
 ## Full Standard Deployment (using defaults)
 az group create -n $resourceGroup -l $location 
-az deployment group create --template-file azuredeploy.json --resource-group $resourceGroup --parameters syncDomainName=$syncDomainName ssl-env=$sslenv
+az deployment group create --template-file azuredeploy.json --resource-group $resourceGroup --parameters syncDomainName=$syncDomainName
 
 ## Staging Deployment
-az group deployment create --template-file azuredeploy.json --resource-group $resourceGroup --parameters gitHubUser=$githubUser gitHubRepo=$gitHubRepo roleName=Owner newVaultName=none ssl-env=staging
+az group deployment create --template-file azuredeploy.json --resource-group $resourceGroup --parameters syncDomainName=$syncDomainName ssl-env=staging
 
 ## Customized Deployment
 $syncPort=8443
-az deployment group create --template-file azuredeploy.json --resource-group $resourceGroup --parameters gitHubUser=$githubUser gitHubRepo=$gitHubRepo roleName=Owner newVaultName=none \
-    syncPort=$syncPort syncStorageAccount=$syncStorageAcct \
-    syncStorageShareName=$syncStorageShareName
+az deployment group create --template-file azuredeploy.json --resource-group $resourceGroup --parameters syncDomainName=$syncDomainName syncPort=$syncPort
