@@ -1,18 +1,14 @@
 ## Standard Variables for Azure Boostrapper (more here-- https://github.com/tescales/azure-bootstrapper-arm)
 $resourceGroup = "ffoxsync"
 $location = "westus2"
-$gitHubUser = "tescales"
-$gitHubRepo = "ffoxsync"
-$roleName = "Owner"
-$kvName = "none"
 
 ## Project Variables
-$syncStorageAccount = "$($resourceGroup)stor"
-$syncStorageShareName = "my-$($resourceGroup)-data"
+$syncDomainName = "sync.scales.cloud"
+$sslenv = "staging"
 
 ## Full Standard Deployment (using defaults)
 az group create -n $resourceGroup -l $location 
-az deployment group create --template-file azuredeploy.json --resource-group $resourceGroup --parameters gitHubUser=$githubUser gitHubRepo=$gitHubRepo roleName=Owner newVaultName=none 
+az deployment group create --template-file azuredeploy.json --resource-group $resourceGroup --parameters syncDomainName=$syncDomainName ssl-env=$sslenv
 
 ## Staging Deployment
 az group deployment create --template-file azuredeploy.json --resource-group $resourceGroup --parameters gitHubUser=$githubUser gitHubRepo=$gitHubRepo roleName=Owner newVaultName=none ssl-env=staging
