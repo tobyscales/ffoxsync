@@ -8,10 +8,10 @@ This is a pretty simple script that uses both my [ARM bootstrapper](https://gith
 Simply click the buttons below to deploy. If you clone it, either clone both the above repos as well or just leave the hard-coded variable URIs in place.
 
 # What it does/deployment steps:
-1) Creates a deployment Container Instance using the latest [azure-cli](https://hub.docker.com/_/microsoft-azure-cli) Docker image. 
-2) Creates an Azure Files storage share for keeping MySQL database, LetsEncrypt certificates and Nginx config.
-3) Clones this repo into the deployment container and executes bootstrap.sh. This script sets correct permissions on the Azure Files storage account, then passes configuration values from the ARM template into the Nginx config.
-4) Creates a separate Container Group consisting of an Nginx container, a Mozilla SyncServer container and a MySQL container.
+1) Creates a deployment Container Instance using the latest [azure-cli](https://hub.docker.com/_/microsoft-azure-cli) Docker image. (azure-bootstrapper)
+2) Creates an Azure Files storage share for keeping MySQL database, LetsEncrypt certificates and Nginx config. (azure-letsencrypt)
+3) Clones this repo into the deployment container and executes bootstrap.sh. This script sets correct permissions on the Azure Files storage account, then passes configuration values from the ARM template into the Nginx config. (azure-letsencrypt)
+4) Creates a separate Container Group consisting of an Nginx container, a Mozilla SyncServer container and a MySQL container. (azure-ffoxsync)
 
 `IMPORTANT NOTE: In order to validate the SSL certificate, you will need to create a cname record for your domain and point it at the ACI DNS name in the Azure portal.`
 
@@ -33,4 +33,5 @@ services: `azure-container-instances,azure-files,docker,nginx,letsencrypt,mozill
 * add support for pre-existing storage account
 * add support for using AzureDNS to publish DNS entry
 * add support for storing certs/secrets in keyvault
+* add bootstrapper/inline script to update w better FFox config
   

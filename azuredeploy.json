@@ -23,6 +23,9 @@
     },
     "variables": {
         "azure-letsencryptUri": "https://raw.githubusercontent.com/tescales/azure-letsencrypt/master/azuredeploy.json",
+        "bootstrapperUri": "https://raw.githubusercontent.com/tescales/azure-bootstrapper-arm/master/azuredeploy.json",
+        "thisRepoUri": "[if(contains(deployment().properties, 'templateLink'), deployment().templateLink.uri, 'https://raw.githubusercontent.com/tescales/azure-letsencrypt/master')]",
+        "thisBootstrapUri": "[uri(variables('thisRepoUri'), 'master/bootstrap/bootstrap.sh')]",
         "dbuser": "[resourceGroup().name]",
         "dbpass": "[uniqueString(resourceGroup().id, deployment().name)]",
         "syncsecret": "[base64(concat(uniqueString(subscription().id),uniqueString(resourceGroup().id)))]"
